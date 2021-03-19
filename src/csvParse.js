@@ -6,114 +6,108 @@ const mongoose = require('mongoose');
 
 const uri = "mongodb://localhost:27017/SDC";
 
-// mongoose.connect(uri, {useNewUrlParser: true, useUnifiedTopology: true });
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
 async function parseProducts() {
-  let entry;
+  let entry, operations;
   await client.connect();
   const database = client.db("SDC");
   const productInfoColl = database.collection("product_info");
   const stream = fs.createReadStream('./data/product.csv').pipe(csv());
 
   productInfoColl.drop();
+  productInfoColl.createIndex( { product_id: 1 } );
 
-  let operations = [];
-  let count = 0;
+  operations = [];
 
+  console.log('Loading to database...')
   for await (const chunk of stream) {
     entry = {
       insertOne: {
         document: {
           product_id: Number(chunk['id']),
-          name: chunk[' name'],
-          slogan: chunk[' slogan'],
-          description: chunk[' description'],
-          category: chunk[' category'],
-          default_price: chunk[' default_price'],
+          name: chunk['name'],
+          slogan: chunk['slogan'],
+          description: chunk['description'],
+          category: chunk['category'],
+          default_price: chunk['default_price'].trim(),
         }
       }
     };
 
     operations.push(entry);
-    count++;
-    if (count % 500 === 0) {
+    if (operations.length > 500) {
       productInfoColl.bulkWrite(operations)
       .catch(err => {console.log(err);})
       operations = [];
     }
   }
-  productInfoColl.bulkWrite(operations, {ordered : true})
-  .catch(err => {console.log(err);})
+  if (operations.length) {
+    productInfoColl.bulkWrite(operations)
+    .catch(err => {console.log(err);})
+  }
   console.log('Finished loading products')
 }
 
 async function parseFeatures() {
-  let entry, currentID;
+  let entry, operations, product_id, feature, value;
   await client.connect();
   const database = client.db("SDC");
-  const productFeaturesColl = database.collection("product_features");
+  const productInfoColl = database.collection("product_info");
   const stream = fs.createReadStream('./data/features.csv').pipe(csv());
 
-  currentID = 1;
-   = [];
+  operations = [];
 
+  console.log('Updating entries with features...')
   for await (const chunk of stream) {
-    const product_id = Number(chunk['1']);
-    const feature = chunk['Fabric'];
-    const value = chunk['Canvas'];
+    product_id = Number(chunk['product_id']);
+    feature = chunk['feature'];
+    value = chunk['value'];
 
-    if (product_id === currentID) {
-      if (value !== 'null') {
-        entry.push( { feature, value } )
+    if (value === 'null') {
+      continue;
+    }
 
+    entry = {
+      updateOne: {
+        filter: { product_id: product_id },
+        update: { $push: { features:  { feature, value } } }
       }
-    } else {
-      await productFeaturesColl.updateOne(
-        { product_id: currentID },
-        { $set: { features: entry } },
-        (err, doc) => {
-          if (err) {console.log(err);}
-          // console.log(doc);
-        }
-      )
-      currentID = product_id;
-      entry = [];
-      if (value !== 'null') {
-        entry.push( { feature, value } )
-      }
+    };
+    operations.push(entry);
+
+    if (operations.length > 500) {
+      await productInfoColl.bulkWrite(operations)
+      operations = [];
     }
   }
-  if (entry.length) {
-    await productFeaturesColl.updateOne(
-      { product_id: currentID },
-      { $set: { features: entry } },
-      (err, doc) => {
-        if (err) {console.log(err);}
-      }
-    )
+  if (operations.length) {
+    productInfoColl.bulkWrite(operations)
+    .catch(err => {console.log(err);})
+    operations = [];
   }
+
   console.log('Finished!')
 }
 
 async function parseRelatedProducts() {
+  let entry, operations;
   await client.connect();
   const database = client.db("SDC");
   const relatedProductsColl = database.collection("related_products");
   const stream = fs.createReadStream('./data/related.csv').pipe(csv());
 
   relatedProductsColl.drop();
-  let entry = {product_id: 1, related_products: []};
+  entry = {product_id: 1, related_products: []};
+
   console.log('Loading entries into database...')
-  // Loop through each row in CSV
   for await (const chunk of stream) {
     const product_id = Number(chunk['current_product_id']);
     const related_product_id = Number(chunk['related_product_id']);
 
-    // Checks to see if the next row is the same product_id or a new one
     if (product_id === entry.product_id) {
       if (!entry.related_products.includes( related_product_id )) {
         entry.related_products.push( related_product_id )
@@ -130,59 +124,123 @@ async function parseRelatedProducts() {
 }
 
 async function parseStyles() {
+  let entry, operations;
   await client.connect();
   const database = client.db("SDC");
   const productStylesColl = database.collection("product_styles");
   const stream = fs.createReadStream('./data/styles.csv').pipe(csv());
 
   productStylesColl.drop();
+  productStylesColl.createIndex( { product_id: 1 } );
+  productStylesColl.createIndex( { style_id: 1 } );
 
+  operations = [];
+
+  console.log('Loading styles into database...');
   for await (const chunk of stream) {
-    console.log(chunk);
-    let entry = {
-    'product_id': Number(chunk['productId']),
-    'style_id': Number(chunk['id']),
-    'default?': chunk['default_style'] === '1' ? true : false,
-    'sale_price': chunk['sale_price'] === 'null' ? '0' : chunk['sale_price'],
-    'original_price': chunk['original_price'],
-    'name': chunk['name']
+    entry = {
+      insertOne: {
+        document: {
+          'product_id': Number(chunk['productId']),
+          'style_id': Number(chunk['id']),
+          'default?': chunk['default_style'] === '1' ? true : false,
+          'sale_price': chunk['sale_price'] === 'null' ? '0' : chunk['sale_price'],
+          'original_price': chunk['original_price'],
+          'name': chunk['name']
+        }
+      }
     };
 
-    await productStylesColl.insertOne(entry);
-  }
-  console.log('Finished!')
-
-  const stream2 = fs.createReadStream('./data/photos.csv').pipe(csv());
-
-  let entries = [];
-  let currentStyle = 1;
-
-  for await (const chunk of stream2) {
-    let style_id = Number(chunk[' styleId']);
-
-    let photoObj = {
-      url: chunk[' url'],
-      thumbnail_url: chunk[' thumbnail_url']
-    }
-
-    if (style_id === currentStyle) {
-      entries.push( photoObj )
-    } else {
-      await productStylesColl.findOneAndUpdate(
-        { style_id: currentStyle },
-        { $set: { photos: entries } },
-        (err, doc) => {
-          if (err) {console.log(err);}
-          console.log(storage);
-        }
-      )
-      entries = [ photoObj ]
-      currentStyle = style_id;
+    operations.push(entry);
+    if (operations.length > 500) {
+      productStylesColl.bulkWrite(operations)
+      .catch(err => {console.log(err);})
+      operations = [];
     }
   }
+  if (operations.length) {
+    productStylesColl.bulkWrite(operations)
+    .catch(err => {console.log(err);})
+    operations = [];
+  }
+  console.log('Finished loading styles')
 }
 
-parseProducts();
+async function parsePhotos() {
+  let entry, operations;
+  await client.connect();
+  const database = client.db("SDC");
+  const productStylesColl = database.collection("product_styles");
+  const stream = fs.createReadStream('./data/photos.csv').pipe(csv());
+
+  operations = [];
+
+  console.log('Updating styles with photos...');
+  for await (const chunk of stream) {
+    entry = {
+      updateOne: {
+        filter: { style_id: Number(chunk[' styleId']) },
+        update: { $push: { photos: { url: chunk[' url'], thumbnail_url: chunk[' thumbnail_url'] } } }
+      }
+    };
+    operations.push(entry);
+
+    if (operations.length > 500) {
+      await productStylesColl.bulkWrite(operations)
+      operations = [];
+    }
+  }
+
+  if (operations.length) {
+    productStylesColl.bulkWrite(operations)
+    .catch(err => {console.log(err);})
+    operations = [];
+  }
+  console.log('Finished!')
+}
+
+async function parseSKU() {
+  let entry, operations, style_id, size, quantity;
+  await client.connect();
+  const database = client.db("SDC");
+  const productStylesColl = database.collection("product_styles");
+  const stream = fs.createReadStream('./data/skus.csv').pipe(csv());
+
+  operations = [];
+
+  console.log('Updating entries with skus...')
+  for await (const chunk of stream) {
+    id = chunk['id'];
+    style_id = Number(chunk[' styleId']);
+    size = chunk[' size'];
+    quantity = chunk[' quantity'];
+
+    entry = {
+      updateOne: {
+        filter: { style_id: style_id },
+        update: { $push: { skus:  {[id]: { size, quantity } } } }
+      }
+    };
+    operations.push(entry);
+
+    if (operations.length > 500) {
+      await productStylesColl.bulkWrite(operations)
+      operations = [];
+    }
+  }
+  if (operations.length) {
+    productStylesColl.bulkWrite(operations)
+    .catch(err => {console.log(err);})
+    operations = [];
+  }
+
+  console.log('Finished!')
+}
+
+
+// parseProducts();
 // parseFeatures();
 // parseRelatedProducts();
 // parseStyles();
+// parsePhotos();
+parseSKU();
