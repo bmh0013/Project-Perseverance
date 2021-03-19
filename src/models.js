@@ -16,7 +16,7 @@ const stylesSchema = new mongoose.Schema({
   'default?': Boolean,
   sale_price: String,
   original_price: String,
-  photos: Object,
+  photos: Array,
   skus: Object
 }, {collection: 'product_styles'});
 
