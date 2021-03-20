@@ -19,7 +19,7 @@ async function parseProducts() {
   const stream = fs.createReadStream('./data/product.csv').pipe(csv());
 
   productInfoColl.drop();
-  productInfoColl.createIndex( { product_id: 1 } );
+  productInfoColl.createIndex( { id: 1 } );
 
   operations = [];
 
@@ -28,7 +28,7 @@ async function parseProducts() {
     entry = {
       insertOne: {
         document: {
-          product_id: Number(chunk['id']),
+          id: Number(chunk['id']),
           name: chunk['name'],
           slogan: chunk['slogan'],
           description: chunk['description'],
@@ -53,15 +53,20 @@ async function parseProducts() {
 }
 
 async function parseFeatures() {
-  let entry, operations, product_id, feature, value;
+  let entry, operations, allFeatures, currentProduct, product_id, feature, value;
   await client.connect();
   const database = client.db("SDC");
-  const productInfoColl = database.collection("product_info");
+  const productFeaturesColl = database.collection("product_features");
   const stream = fs.createReadStream('./data/features.csv').pipe(csv());
 
-  operations = [];
+  productFeaturesColl.drop();
+  productFeaturesColl.createIndex( { product_id: 1 } );
 
-  console.log('Updating entries with features...')
+  operations = [];
+  allFeatures = [];
+  currentProduct = 1;
+
+  console.log('Loading features into database...')
   for await (const chunk of stream) {
     product_id = Number(chunk['product_id']);
     feature = chunk['feature'];
@@ -70,24 +75,35 @@ async function parseFeatures() {
     if (value === 'null') {
       continue;
     }
+    if (currentProduct === product_id) {
+      allFeatures.push( {feature, value} );
+    } else {
+      createEntry()
+      currentProduct = product_id
+      allFeatures = [ {feature, value} ];
 
+      if (operations.length > 500) {
+        await productFeaturesColl.bulkWrite(operations)
+        operations = [];
+      }
+    }
+  }
+
+  if (allFeatures.length) {
+    createEntry();
+    await productFeaturesColl.bulkWrite(operations)
+  }
+
+  function createEntry() {
     entry = {
-      updateOne: {
-        filter: { product_id: product_id },
-        update: { $push: { features:  { feature, value } } }
+      insertOne: {
+        document: {
+          product_id: currentProduct,
+          features: allFeatures.slice()
+        }
       }
     };
     operations.push(entry);
-
-    if (operations.length > 500) {
-      await productInfoColl.bulkWrite(operations)
-      operations = [];
-    }
-  }
-  if (operations.length) {
-    productInfoColl.bulkWrite(operations)
-    .catch(err => {console.log(err);})
-    operations = [];
   }
 
   console.log('Finished!')
@@ -239,8 +255,8 @@ async function parseSKU() {
 
 
 // parseProducts();
-// parseFeatures();
+parseFeatures();
 // parseRelatedProducts();
 // parseStyles();
 // parsePhotos();
-parseSKU();
+// parseSKU();
