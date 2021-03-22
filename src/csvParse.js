@@ -110,32 +110,55 @@ async function parseFeatures() {
 }
 
 async function parseRelatedProducts() {
-  let entry, operations;
+  let entry, operations, allRelated, currentProduct, product_id, related;
   await client.connect();
   const database = client.db("SDC");
   const relatedProductsColl = database.collection("related_products");
   const stream = fs.createReadStream('./data/related.csv').pipe(csv());
 
   relatedProductsColl.drop();
-  entry = {product_id: 1, related_products: []};
+  relatedProductsColl.createIndex( { product_id: 1 } );
 
-  console.log('Loading entries into database...')
+  operations = [];
+  allRelated = [];
+  currentProduct = 1;
+
+  console.log('Loading related products into database...')
   for await (const chunk of stream) {
-    const product_id = Number(chunk['current_product_id']);
-    const related_product_id = Number(chunk['related_product_id']);
+    product_id = Number(chunk['current_product_id']);
+    related = Number(chunk['related_product_id']);
 
-    if (product_id === entry.product_id) {
-      if (!entry.related_products.includes( related_product_id )) {
-        entry.related_products.push( related_product_id )
-      }
+    if (currentProduct === product_id) {
+      allRelated.push( related );
     } else {
-      await relatedProductsColl.insertOne(entry);
-      entry = {};
-      entry.product_id = product_id
-      entry.related_products = [ related_product_id ];
+      createEntry()
+      currentProduct = product_id
+      allRelated = [ related ];
+
+      if (operations.length > 500) {
+        await relatedProductsColl.bulkWrite(operations)
+        operations = [];
+      }
     }
   }
-  await relatedProductsColl.insertOne(entry);
+
+  if (allRelated.length) {
+    createEntry();
+    await relatedProductsColl.bulkWrite(operations)
+  }
+
+  function createEntry() {
+    entry = {
+      insertOne: {
+        document: {
+          product_id: currentProduct,
+          related_products: allRelated.slice()
+        }
+      }
+    };
+    operations.push(entry);
+  }
+
   console.log('Finished!')
 }
 
@@ -254,7 +277,7 @@ async function parseSKU() {
 }
 
 
-parseProducts();
+// parseProducts();
 // parseFeatures();
 // parseRelatedProducts();
 // parseStyles();
