@@ -254,8 +254,8 @@ async function parseSKU() {
 }
 
 
-// parseProducts();
-parseFeatures();
+parseProducts();
+// parseFeatures();
 // parseRelatedProducts();
 // parseStyles();
 // parsePhotos();

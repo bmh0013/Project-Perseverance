@@ -7,8 +7,12 @@ const productSchema = new mongoose.Schema({
   slogan: String,
   description: String,
   default_price: String,
-  features: [ { feature: String, value: String } ]
 }, {collection: 'product_info'});
+
+const featuresSchema = new mongoose.Schema({
+  product_id: Number,
+  features: Array
+}, {collection: 'product_features'});
 
 const stylesSchema = new mongoose.Schema({
   product_id: Number,
@@ -26,12 +30,14 @@ const relatedProductsSchema = new mongoose.Schema({
 }, {collection: 'related_products'});
 
 const Product = mongoose.model('product_info', productSchema);
+const Features = mongoose.model('product_features', featuresSchema);
 const Styles = mongoose.model('product_styles', stylesSchema);
 const RelatedProducts = mongoose.model('related_products', relatedProductsSchema);
 
 
 module.exports = {
   Product,
+  Features,
   Styles,
   RelatedProducts
 };
