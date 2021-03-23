@@ -39,14 +39,14 @@ app.get('/products', async (req, res) => {
   res.send(products);
 })
 
-app.get('/product/:product_id', async (req, res) => {
+app.get('/products/:product_id', async (req, res) => {
   let product = await productInfo.findOne( { id: Number(req.params.product_id) } );
   let features = await productFeatures.findOne( { product_id: Number(req.params.product_id) } );
   product.features = features.features;
   res.send(product);
 })
 
-app.get('/product/:product_id/styles', async (req, res) => {
+app.get('/products/:product_id/styles', async (req, res) => {
   let styles = {
     product_id: Number(req.params.product_id),
     results: await productStyles.find( { product_id: Number(req.params.product_id) } ).toArray()
@@ -54,7 +54,7 @@ app.get('/product/:product_id/styles', async (req, res) => {
   res.send(styles);
 })
 
-app.get('/product/:product_id/related', async (req, res) => {
+app.get('/products/:product_id/related', async (req, res) => {
   var related = await relatedProducts.findOne( { product_id: Number(req.params.product_id) } );
   res.send(related.related_products);
 })
