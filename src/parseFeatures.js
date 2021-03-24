@@ -64,7 +64,7 @@ async function parseFeatures() {
   }
 
   console.log('Finished loading features!')
-  await client.close();
+  client.close();
 }
 
 parseFeatures()

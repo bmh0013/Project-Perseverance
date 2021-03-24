@@ -11,8 +11,8 @@ const client = new MongoClient(uri, {
 });
 
 async function parseProducts() {
-  await client.connect();
   let entry, operations;
+  await client.connect();
   const database = client.db("SDC");
   const productInfoColl = database.collection("product_info");
   const stream = fs.createReadStream(path.join(__dirname, '/../data/product.csv')).pipe(csv());
@@ -48,7 +48,7 @@ async function parseProducts() {
     .catch(err => {console.log(err);})
   }
   console.log('Finished loading products!')
-  await client.close();
+  client.close();
 }
 
 parseProducts();

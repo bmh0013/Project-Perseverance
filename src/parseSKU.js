@@ -46,7 +46,7 @@ async function parseSKU() {
   }
 
   console.log('Finished updating styles with skus!')
-  await client.close();
+  client.close();
 }
 
 parseSKU()

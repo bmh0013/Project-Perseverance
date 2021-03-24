@@ -41,7 +41,7 @@ async function parsePhotos() {
     operations = [];
   }
   console.log('Finished updating styles with photos!')
-  await client.close();
+  client.close();
 }
 
 parsePhotos()

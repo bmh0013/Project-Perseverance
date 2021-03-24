@@ -51,7 +51,7 @@ async function parseStyles() {
     operations = [];
   }
   console.log('Finished loading styles')
-  await client.close();
+  client.close();
 }
 
 parseStyles();

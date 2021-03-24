@@ -61,7 +61,7 @@ async function parseRelatedProducts() {
   }
 
   console.log('Finished loading related products!')
-  await client.close();
+  client.close();
 }
 
 parseRelatedProducts();
