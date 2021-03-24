@@ -13,17 +13,15 @@ const client = new MongoClient(uri, {
 
 async function parseProducts() {
   let entry, operations;
-  await client.connect();
   const database = client.db("SDC");
   const productInfoColl = database.collection("product_info");
   const stream = fs.createReadStream('./data/product.csv').pipe(csv());
 
-  productInfoColl.drop();
   productInfoColl.createIndex( { id: 1 } );
 
   operations = [];
 
-  console.log('Loading to database...')
+  console.log('Loading Products to database...')
   for await (const chunk of stream) {
     entry = {
       insertOne: {
@@ -49,17 +47,15 @@ async function parseProducts() {
     productInfoColl.bulkWrite(operations)
     .catch(err => {console.log(err);})
   }
-  console.log('Finished loading products')
+  console.log('Finished loading products!')
 }
 
 async function parseFeatures() {
   let entry, operations, allFeatures, currentProduct, product_id, feature, value;
-  await client.connect();
   const database = client.db("SDC");
   const productFeaturesColl = database.collection("product_features");
   const stream = fs.createReadStream('./data/features.csv').pipe(csv());
 
-  productFeaturesColl.drop();
   productFeaturesColl.createIndex( { product_id: 1 } );
 
   operations = [];
@@ -106,17 +102,15 @@ async function parseFeatures() {
     operations.push(entry);
   }
 
-  console.log('Finished!')
+  console.log('Finished loading features!')
 }
 
 async function parseRelatedProducts() {
   let entry, operations, allRelated, currentProduct, product_id, related;
-  await client.connect();
   const database = client.db("SDC");
   const relatedProductsColl = database.collection("related_products");
   const stream = fs.createReadStream('./data/related.csv').pipe(csv());
 
-  relatedProductsColl.drop();
   relatedProductsColl.createIndex( { product_id: 1 } );
 
   operations = [];
@@ -159,17 +153,15 @@ async function parseRelatedProducts() {
     operations.push(entry);
   }
 
-  console.log('Finished!')
+  console.log('Finished loading related products!')
 }
 
 async function parseStyles() {
   let entry, operations;
-  await client.connect();
   const database = client.db("SDC");
   const productStylesColl = database.collection("product_styles");
   const stream = fs.createReadStream('./data/styles.csv').pipe(csv());
 
-  productStylesColl.drop();
   productStylesColl.createIndex( { product_id: 1 } );
   productStylesColl.createIndex( { style_id: 1 } );
 
@@ -207,7 +199,6 @@ async function parseStyles() {
 
 async function parsePhotos() {
   let entry, operations;
-  await client.connect();
   const database = client.db("SDC");
   const productStylesColl = database.collection("product_styles");
   const stream = fs.createReadStream('./data/photos.csv').pipe(csv());
@@ -235,19 +226,18 @@ async function parsePhotos() {
     .catch(err => {console.log(err);})
     operations = [];
   }
-  console.log('Finished!')
+  console.log('Finished updating styles with photos!')
 }
 
 async function parseSKU() {
   let entry, operations, style_id, size, quantity;
-  await client.connect();
   const database = client.db("SDC");
   const productStylesColl = database.collection("product_styles");
   const stream = fs.createReadStream('./data/skus.csv').pipe(csv());
 
   operations = [];
 
-  console.log('Updating entries with skus...')
+  console.log('Updating styles with skus...')
   for await (const chunk of stream) {
     id = chunk['id'];
     style_id = Number(chunk[' styleId']);
@@ -273,13 +263,18 @@ async function parseSKU() {
     operations = [];
   }
 
-  console.log('Finished!')
+  console.log('Finished updating styles with skus!')
 }
 
+async function runAll() {
+  await client.connect();
+  await parseProducts();
+  await parseFeatures();
+  await parseRelatedProducts();
+  await parseStyles();
+  await parsePhotos();
+  await parseSKU();
+  await client.close();
+}
 
-// parseProducts();
-// parseFeatures();
-// parseRelatedProducts();
-// parseStyles();
-// parsePhotos();
-// parseSKU();
+runAll();
