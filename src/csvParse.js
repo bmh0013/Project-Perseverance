@@ -1,6 +1,7 @@
 const { MongoClient } = require("mongodb");
 const csv = require("csv-parser");
 const fs = require("fs");
+const path = require("path");
 const { Styles, Product, RelatedProducts } = require("./models.js");
 const mongoose = require('mongoose');
 
@@ -13,9 +14,9 @@ const client = new MongoClient(uri, {
 
 async function parseProducts() {
   let entry, operations;
-  const database = client.db("SDC");
+  const database = client.db("Test");
   const productInfoColl = database.collection("product_info");
-  const stream = fs.createReadStream('./data/product.csv').pipe(csv());
+  const stream = fs.createReadStream(path.join(__dirname, '/../data/product.csv')).pipe(csv());
 
   productInfoColl.createIndex( { id: 1 } );
 
@@ -54,7 +55,7 @@ async function parseFeatures() {
   let entry, operations, allFeatures, currentProduct, product_id, feature, value;
   const database = client.db("SDC");
   const productFeaturesColl = database.collection("product_features");
-  const stream = fs.createReadStream('./data/features.csv').pipe(csv());
+  const stream = fs.createReadStream(path.join(__dirname, '/../data/features.csv').pipe(csv());
 
   productFeaturesColl.createIndex( { product_id: 1 } );
 
@@ -109,7 +110,7 @@ async function parseRelatedProducts() {
   let entry, operations, allRelated, currentProduct, product_id, related;
   const database = client.db("SDC");
   const relatedProductsColl = database.collection("related_products");
-  const stream = fs.createReadStream('./data/related.csv').pipe(csv());
+  const stream = fs.createReadStream(path.join(__dirname, '/../data/related.csv').pipe(csv());
 
   relatedProductsColl.createIndex( { product_id: 1 } );
 
@@ -160,7 +161,7 @@ async function parseStyles() {
   let entry, operations;
   const database = client.db("SDC");
   const productStylesColl = database.collection("product_styles");
-  const stream = fs.createReadStream('./data/styles.csv').pipe(csv());
+  const stream = fs.createReadStream(path.join(__dirname, '/../data/styles.csv').pipe(csv());
 
   productStylesColl.createIndex( { product_id: 1 } );
   productStylesColl.createIndex( { style_id: 1 } );
@@ -201,7 +202,7 @@ async function parsePhotos() {
   let entry, operations;
   const database = client.db("SDC");
   const productStylesColl = database.collection("product_styles");
-  const stream = fs.createReadStream('./data/photos.csv').pipe(csv());
+  const stream = fs.createReadStream(path.join(__dirname, '/../data/photos.csv').pipe(csv());
 
   operations = [];
 
@@ -233,7 +234,7 @@ async function parseSKU() {
   let entry, operations, style_id, size, quantity;
   const database = client.db("SDC");
   const productStylesColl = database.collection("product_styles");
-  const stream = fs.createReadStream('./data/skus.csv').pipe(csv());
+  const stream = fs.createReadStream(path.join(__dirname, '/../data/skus.csv').pipe(csv());
 
   operations = [];
 
