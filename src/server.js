@@ -46,7 +46,7 @@ app.get('/products', async (req, res) => {
 
 app.get('/products/:product_id', async (req, res) => {
   let product = await productInfo.findOne( { id: Number(req.params.product_id) } );
-  let features = await productFeatures.findOne( { product_id: Number(req.params.product_id) } );
+  let features = await productFeatures.findOne( { product_id: Number(req.params.product_id) } ) || [];
   product.features = features.features;
   res.send(product);
 })

@@ -2,8 +2,6 @@ const { MongoClient } = require("mongodb");
 const csv = require("csv-parser");
 const fs = require("fs");
 const path = require("path");
-const { Styles, Product, RelatedProducts } = require("./models.js");
-const mongoose = require('mongoose');
 
 const uri = "mongodb://localhost:27017/SDC";
 
