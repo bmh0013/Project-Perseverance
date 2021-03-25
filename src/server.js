@@ -5,6 +5,7 @@ const csv = require("csv-parser");
 const fs = require('fs');
 const path = require('path');
 const { MongoClient } = require("mongodb");
+const TOKEN = require('../token.js')
 
 const uri = "mongodb://localhost:27017/SDC";
 
@@ -34,7 +35,7 @@ app.use( bodyParser.json() );
 app.use( bodyParser.urlencoded( { extended: false } ) );
 
 app.get('/loaderio-95479c543e59383ec77b16314095632e/', (req, res) => {
-  res.send(path.join(__dirname, '../loaderio-95479c543e59383ec77b16314095632e.txt'));
+  res.send(TOKEN);
 })
 
 app.get('/products', async (req, res) => {
