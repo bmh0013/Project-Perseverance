@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const csv = require("csv-parser");
 const fs = require('fs');
+const path = require('path');
 const { MongoClient } = require("mongodb");
 
 const uri = "mongodb://localhost:27017/SDC";
@@ -32,6 +33,9 @@ const relatedProducts = database.collection("related_products");
 app.use( bodyParser.json() );
 app.use( bodyParser.urlencoded( { extended: false } ) );
 
+app.get('/loaderio-95479c543e59383ec77b16314095632e/', (req, res) => {
+  res.send(path.join(__dirname, '../loaderio-95479c543e59383ec77b16314095632e.txt'));
+})
 
 app.get('/products', async (req, res) => {
   let count = Number(req.query.count) || 5;
