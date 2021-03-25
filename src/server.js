@@ -5,7 +5,7 @@ const csv = require("csv-parser");
 const fs = require('fs');
 const path = require('path');
 const { MongoClient } = require("mongodb");
-const TOKEN = require('../token.js')
+const { TOKEN } = require('../token.js')
 
 const uri = "mongodb://localhost:27017/SDC";
 
