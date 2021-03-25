@@ -34,7 +34,7 @@ const relatedProducts = database.collection("related_products");
 app.use( bodyParser.json() );
 app.use( bodyParser.urlencoded( { extended: false } ) );
 
-app.get('/loaderio-95479c543e59383ec77b16314095632e/', (req, res) => {
+app.get('/loaderio-95479c543e59383ec77b16314095632e', (req, res) => {
   res.send(TOKEN);
 })
 
@@ -47,8 +47,11 @@ app.get('/products', async (req, res) => {
 app.get('/products/:product_id', async (req, res) => {
   let product = await productInfo.findOne( { id: Number(req.params.product_id) } );
   let features = await productFeatures.findOne( { product_id: Number(req.params.product_id) } ) || [];
-  product.features = features.features;
-  res.send(product);
+  Promise.all([product, features])
+    .then(result => {
+      result[0].features = result[1].features;
+      res.send(result[0]);
+    })
 })
 
 app.get('/products/:product_id/styles', async (req, res) => {
