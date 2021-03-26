@@ -86,9 +86,6 @@ app.get('/products/:product_id/related', async (req, res) => {
 })
 
 process.on('uncaughtException', function(err) {
-  if(err.errno === 'EADDRINUSE')
-       console.log(...);
-  else
-       console.log(err);
+  console.log(err);
   process.exit(1);
 });
