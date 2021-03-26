@@ -78,7 +78,8 @@ app.get('/products/:product_id/styles', async (req, res) => {
 
 app.get('/products/:product_id/related', async (req, res) => {
   var related = await relatedProducts.findOne( { product_id: Number(req.params.product_id) } );
-  if (related.length) {
+  console.log(related);
+  if (related) {
     res.send(related.related_products);
   } else {
     res.sendStatus(404);
