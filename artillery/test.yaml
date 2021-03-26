@@ -31,13 +31,13 @@
 #           url: "/products/{{$randomNumber(1, 900000)}}/styles"
 
 
-config:
-  target: 'http://localhost:3000'
-  phases:
-    - duration: 60
-      arrivalRate: 500
-scenarios:
-  - flow:
-      - get:
-          url: "/products/{{$randomNumber(1, 900000)}}/related"
+# config:
+#   target: 'http://localhost:3000'
+#   phases:
+#     - duration: 60
+#       arrivalRate: 500
+# scenarios:
+#   - flow:
+#       - get:
+#           url: "/products/{{$randomNumber(900000, 1000000)}}/related"
 

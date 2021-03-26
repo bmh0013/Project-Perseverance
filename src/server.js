@@ -41,7 +41,11 @@ app.get('/loaderio-95479c543e59383ec77b16314095632e', (req, res) => {
 app.get('/products', async (req, res) => {
   let count = Number(req.query.count) || 5;
   var products = await productInfo.find( { id: { $gte: 1, $lte: count } } ).toArray();
-  res.send(products);
+  if (products) {
+    res.send(products);
+  } else {
+    res.sendStatus(404);
+  }
 })
 
 app.get('/products/:product_id', async (req, res) => {
@@ -49,20 +53,34 @@ app.get('/products/:product_id', async (req, res) => {
   let features = await productFeatures.findOne( { product_id: Number(req.params.product_id) } ) || [];
   Promise.all([product, features])
     .then(result => {
-      result[0].features = result[1].features;
-      res.send(result[0]);
+      if (result[0]) {
+        result[0].features = result[1].features;
+        res.send(result[0]);
+      } else {
+        res.sendStatus(404);
+      }
     })
 })
 
 app.get('/products/:product_id/styles', async (req, res) => {
-  let styles = {
-    product_id: Number(req.params.product_id),
-    results: await productStyles.find( { product_id: Number(req.params.product_id) } ).toArray()
-  };
-  res.send(styles);
+  let styles = await productStyles.find( { product_id: Number(req.params.product_id) } ).toArray()
+
+  if (styles.length) {
+    let styles = {
+      product_id: Number(req.params.product_id),
+      results: await productStyles.find( { product_id: Number(req.params.product_id) } ).toArray()
+    };
+    res.send(styles);
+  } else {
+    res.sendStatus(404);
+  }
 })
 
 app.get('/products/:product_id/related', async (req, res) => {
   var related = await relatedProducts.findOne( { product_id: Number(req.params.product_id) } );
-  res.send(related.related_products);
+  if (related) {
+    res.send(related.related_productsz);
+  } else {
+    res.sendStatus(404);
+  }
 })
